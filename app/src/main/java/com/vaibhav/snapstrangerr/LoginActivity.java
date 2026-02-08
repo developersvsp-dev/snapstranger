@@ -3,6 +3,7 @@ package com.vaibhav.snapstrangerr;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +19,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.vaibhav.snapstrangerr.R;
+
+import java.util.HashMap;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -92,12 +95,8 @@ public class LoginActivity extends AppCompatActivity {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (username.isEmpty()) {
-            showError(etUsername, "Enter username");
-            return;
-        }
-        if (password.isEmpty()) {
-            showError(etPassword, "Enter password");
+        if (username.isEmpty() || password.isEmpty()) {
+            showError(etUsername, "Enter username & password");
             return;
         }
 
@@ -112,7 +111,16 @@ public class LoginActivity extends AppCompatActivity {
                         if (!snapshot.isEmpty() && snapshot.getDocuments().size() == 1) {
                             User user = snapshot.getDocuments().get(0).toObject(User.class);
                             if (user != null && user.getPassword().equals(password)) {
-                                saveLoginSession(username, user.getGender());
+
+                                // 🔥 CRITICAL: Get Firestore document ID
+                                String documentId = snapshot.getDocuments().get(0).getId();
+
+                                // 🔥 Ensure status field exists
+                                ensureUserStatus(documentId, "offline");
+
+                                // 🔥 SAVE DOCUMENT ID in SharedPreferences
+                                saveLoginSession(username, user.getGender(), documentId);
+
                                 Toast.makeText(this, "✅ Welcome back, " + username + "!", Toast.LENGTH_SHORT).show();
                                 Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                                 intent.putExtra("USERNAME", username);
@@ -131,6 +139,32 @@ public class LoginActivity extends AppCompatActivity {
                     resetLoginButton();
                 });
     }
+
+    // 🔥 NEW: Save document ID
+    private void saveLoginSession(String username, String gender, String documentId) {
+        getSharedPreferences("user_session", MODE_PRIVATE)
+                .edit()
+                .putString("USERNAME", username)
+                .putString("GENDER", gender)
+                .putString("DOCUMENT_ID", documentId)  // 🔥 FIRESTORE DOC ID
+                .putBoolean("IS_LOGGED_IN", true)
+                .apply();
+    }
+
+
+    // 🔥 NEW: Helper method to ensure status field exists
+    private void ensureUserStatus(String uid, String status) {
+        db.collection("users").document(uid)
+                .update("status", status)
+                .addOnFailureListener(e -> {
+                    // If update fails (field doesn't exist), create it
+                    db.collection("users").document(uid)
+                            .set(new HashMap<String, Object>() {{ put("status", status); }},
+                                    com.google.firebase.firestore.SetOptions.merge())
+                            .addOnFailureListener(ex -> Log.e("Login", "Failed to set status", ex));
+                });
+    }
+
 
     private void saveLoginSession(String username, String gender) {
         getSharedPreferences("user_session", MODE_PRIVATE)

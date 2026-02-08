@@ -28,6 +28,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.vaibhav.snapstrangerr.R;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,9 +75,12 @@ public class MainActivity extends AppCompatActivity {
     private void checkLoginSession() {
         SharedPreferences prefs = getSharedPreferences("user_session", MODE_PRIVATE);
         boolean isLoggedIn = prefs.getBoolean("IS_LOGGED_IN", false);
+
         if (isLoggedIn) {
             String username = prefs.getString("USERNAME", "");
             String gender = prefs.getString("GENDER", "");
+            String documentId = prefs.getString("DOCUMENT_ID", "");  // 🔥 ADD THIS
+
             if (!username.isEmpty()) {
                 Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
                 intent.putExtra("USERNAME", username);
@@ -87,14 +92,18 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void saveLoginSession(String username, String gender) {
+
+    // 🔥 OLD (2 params) → NEW (3 params)
+    private void saveLoginSession(String username, String gender, String documentId) {
         getSharedPreferences("user_session", MODE_PRIVATE)
                 .edit()
                 .putString("USERNAME", username)
                 .putString("GENDER", gender)
+                .putString("DOCUMENT_ID", documentId)  // 🔥 NEW PARAMETER
                 .putBoolean("IS_LOGGED_IN", true)
                 .apply();
     }
+
 
     private void initViews() {
         etUsername = findViewById(R.id.etUsername);
@@ -242,11 +251,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void registerNewUser(String username, String password, String gender) {
-        User user = new User(username, password, gender);
-        usersCollection.add(user)
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("username", username);
+        userData.put("password", password);
+        userData.put("gender", gender);
+        userData.put("status", "offline");  // 🔥 Initial status
+
+        usersCollection.add(userData)
                 .addOnSuccessListener(documentReference -> {
-                    Log.d("FIRESTORE", "✅ User registered! ID: " + documentReference.getId());
-                    saveLoginSession(username, gender);
+                    String documentId = documentReference.getId();  // 🔥 Get document ID
+
+                    // 🔥 Save with document ID
+                    saveLoginSession(username, gender, documentId);
+
                     Toast.makeText(this, "✅ Welcome to SnapStrangerr, " + username + "!", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(MainActivity.this, DashboardActivity.class);
                     intent.putExtra("USERNAME", username);
@@ -256,11 +273,13 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e("FIRESTORE", "Registration failed: " + e.getMessage());
-                    Toast.makeText(this, "❌ Registration failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "❌ Registration failed", Toast.LENGTH_LONG).show();
                     btnRegister.setText("Create Account");
                     btnRegister.setEnabled(true);
                 });
     }
+
+
 
     private void showError(View inputView, String errorMsg) {
         if (inputView == null) return;

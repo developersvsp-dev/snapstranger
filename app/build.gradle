@@ -46,12 +46,17 @@ dependencies {
     androidTestImplementation libs.espresso.core
     implementation platform('com.google.firebase:firebase-bom:34.9.0')
 // Firebase BoM (manages versions)
-    implementation platform('com.google.firebase:firebase-bom:33.5.1')
+
 
     // Add Firebase services you need:
     implementation 'com.google.firebase:firebase-auth'     // Authentication
     implementation 'com.google.firebase:firebase-database' // Realtime Database
      implementation 'com.google.firebase:firebase-firestore' // Firestore
+
+    // 🔥 ADD THESE for ProcessLifecycleOwner
+    implementation 'androidx.lifecycle:lifecycle-common-java8:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-process:2.8.7'
+    implementation 'androidx.lifecycle:lifecycle-runtime:2.8.7'
 }
 
 

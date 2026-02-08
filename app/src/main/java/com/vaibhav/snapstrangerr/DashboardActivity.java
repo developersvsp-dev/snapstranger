@@ -3,6 +3,7 @@ package com.vaibhav.snapstrangerr;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -25,6 +26,7 @@ public class DashboardActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
     private String selectedStrangerType = "";
+    private static final String TAG = "DashboardActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +39,11 @@ public class DashboardActivity extends AppCompatActivity {
 
         initViews();
         setupUserData();
+
+        // 🔥 INSTANTLY set active + show green badge
+        setUserStatus("active");
+        showActiveBadge();
+
         setupButtons();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.dashboard_main), (v, insets) -> {
@@ -44,6 +51,23 @@ public class DashboardActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    // 🔥 LIFECYCLE: Set active when screen visible
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setUserStatus("active");
+        showActiveBadge();
+        Log.d(TAG, "Dashboard onResume - ACTIVE");
+    }
+
+    // 🔥 LIFECYCLE: Set offline when screen not visible
+    @Override
+    protected void onPause() {
+        super.onPause();
+        setUserStatus("offline");
+        Log.d(TAG, "Dashboard onPause - OFFLINE");
     }
 
     private void initViews() {
@@ -67,15 +91,38 @@ public class DashboardActivity extends AppCompatActivity {
             gender = prefs.getString("GENDER", "Not set");
         }
 
-        tvWelcome.setText("Welcome to SnapStrangerr, " + username + "!");
         tvUsername.setText("Username: " + username);
         tvGender.setText("Gender: " + gender);
+    }
+
+    // 🔥 SHOW GREEN BADGE IMMEDIATELY
+    private void showActiveBadge() {
+        String username = tvUsername.getText().toString().replace("Username: ", "");
+        tvWelcome.setText("🟢 Active - Welcome to SnapStrangerr, " + username + "!");
+    }
+
+    // 🔥 UPDATE FIRESTORE STATUS
+    private void setUserStatus(String status) {
+        // 🔥 USE SHARED PREFERENCES DOCUMENT ID (NOT FirebaseAuth UID)
+        SharedPreferences prefs = getSharedPreferences("user_session", MODE_PRIVATE);
+        String documentId = prefs.getString("DOCUMENT_ID", null);
+
+        if (documentId == null) {
+            Log.e(TAG, "No document ID found in SharedPreferences");
+            return;
+        }
+
+        db.collection("users").document(documentId)
+                .update("status", status)
+                .addOnSuccessListener(aVoid -> Log.d(TAG, "✅ Status updated to: " + status))
+                .addOnFailureListener(e -> Log.e(TAG, "❌ Status update failed", e));
     }
 
     private void setupButtons() {
         btnSearchStranger.setOnClickListener(v -> showStrangerSearchDialog());
 
         btnLogout.setOnClickListener(v -> {
+            setUserStatus("offline");
             getSharedPreferences("user_session", MODE_PRIVATE)
                     .edit()
                     .clear()
@@ -88,34 +135,26 @@ public class DashboardActivity extends AppCompatActivity {
         });
     }
 
-    // 🔥 PERFECTLY FIXED DIALOG - NO CRASH!
     private void showStrangerSearchDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_stranger_search, null);
         builder.setView(dialogView);
-
         AlertDialog dialog = builder.create();
 
-        // ✅ FIXED: TextView (NOT ImageView!)
         TextView iconMale = dialogView.findViewById(R.id.iconMale);
         TextView iconFemale = dialogView.findViewById(R.id.iconFemale);
         TextView iconRandom = dialogView.findViewById(R.id.iconRandom);
-
         LinearLayout optionMale = dialogView.findViewById(R.id.optionMale);
         LinearLayout optionFemale = dialogView.findViewById(R.id.optionFemale);
         LinearLayout optionRandom = dialogView.findViewById(R.id.optionRandom);
-
         Button btnSearch = dialogView.findViewById(R.id.btnSearch);
         Button btnCancel = dialogView.findViewById(R.id.btnCancel);
 
-        // Initially disable search button
         btnSearch.setEnabled(false);
         btnSearch.setAlpha(0.6f);
 
-        // Selection logic
         View.OnClickListener optionClick = v -> {
             resetAllIcons(iconMale, iconFemale, iconRandom);
-
             if (v.getId() == R.id.optionMale) {
                 iconMale.setVisibility(View.VISIBLE);
                 selectedStrangerType = "🔥 Male";
@@ -126,8 +165,6 @@ public class DashboardActivity extends AppCompatActivity {
                 iconRandom.setVisibility(View.VISIBLE);
                 selectedStrangerType = "🎲 Random";
             }
-
-            // Enable search button
             btnSearch.setEnabled(true);
             btnSearch.setAlpha(1.0f);
         };
@@ -136,7 +173,6 @@ public class DashboardActivity extends AppCompatActivity {
         optionFemale.setOnClickListener(optionClick);
         optionRandom.setOnClickListener(optionClick);
 
-        // Search button
         btnSearch.setOnClickListener(v -> {
             if (!selectedStrangerType.isEmpty()) {
                 Toast.makeText(this, "🔍 Searching for " + selectedStrangerType + "...", Toast.LENGTH_SHORT).show();
@@ -153,7 +189,6 @@ public class DashboardActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // ✅ FIXED: Takes TextView parameters
     private void resetAllIcons(TextView iconMale, TextView iconFemale, TextView iconRandom) {
         if (iconMale != null) iconMale.setVisibility(View.GONE);
         if (iconFemale != null) iconFemale.setVisibility(View.GONE);

@@ -37,7 +37,7 @@
             android:name=".StrangerChatActivity"
             android:exported="false" />
 
-
+        
     </application>
 
 </manifest>
