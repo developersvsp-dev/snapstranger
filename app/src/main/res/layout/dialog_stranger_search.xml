@@ -22,7 +22,6 @@
             android:orientation="horizontal"
             android:layout_marginBottom="20dp">
 
-            <!-- ✅ FIXED: Use simple search icon -->
             <TextView
                 android:layout_width="40dp"
                 android:layout_height="40dp"
@@ -46,8 +45,9 @@
                 android:fontFamily="sans-serif-medium" />
         </LinearLayout>
 
-        <!-- Subtitle -->
+        <!-- 🔥 FIXED: Added ID to existing subtitle -->
         <TextView
+            android:id="@+id/tvHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Who do you want to chat with?"
@@ -70,7 +70,6 @@
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground">
 
-            <!-- ✅ FIXED: Simple emoji -->
             <TextView
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -107,7 +106,6 @@
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
-            <!-- ✅ FIXED: Text Checkmark -->
             <TextView
                 android:id="@+id/iconMale"
                 android:layout_width="24dp"
@@ -134,7 +132,6 @@
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground">
 
-            <!-- ✅ FIXED: Simple emoji -->
             <TextView
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -171,7 +168,6 @@
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
-            <!-- ✅ FIXED: Text Checkmark -->
             <TextView
                 android:id="@+id/iconFemale"
                 android:layout_width="24dp"
@@ -197,7 +193,6 @@
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground">
 
-            <!-- ✅ FIXED: Simple emoji -->
             <TextView
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -234,7 +229,6 @@
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
-            <!-- ✅ FIXED: Text Checkmark -->
             <TextView
                 android:id="@+id/iconRandom"
                 android:layout_width="24dp"
@@ -276,7 +270,9 @@
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
                 app:backgroundTint="#FF6B6B"
-                app:cornerRadius="24dp" />
+                app:cornerRadius="24dp"
+                android:alpha="0.6"
+                android:enabled="false" />
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

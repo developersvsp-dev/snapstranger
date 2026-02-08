@@ -23,6 +23,14 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
+            android:id="@+id/tvStrangerName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chatting with: Stranger"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:padding="16dp" />
+        <TextView
             android:id="@+id/btnBack"
             android:layout_width="44dp"
             android:layout_height="44dp"
